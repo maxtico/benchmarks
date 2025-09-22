@@ -79,8 +79,8 @@ from pathlib import Path
 import psutil
 
 # ───── user-tunable limits ────────────────────────────────────────────────────
-LIMIT_MB = 32_000  # hard RSS ceiling in MiB
-TIMEOUT_S = 900  # wall-clock limit in seconds
+LIMIT_MB = 120_000  # hard RSS ceiling in MiB
+TIMEOUT_S = 9000  # wall-clock limit in seconds
 # ──────────────────────────────────────────────────────────────────────────────
 LIMIT_BYTES = LIMIT_MB * 1024 * 1024
 

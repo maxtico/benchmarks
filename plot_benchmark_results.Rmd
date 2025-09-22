@@ -1,0 +1,349 @@
+---
+title: "pyranges benchmark"
+output: html_document
+date: "2025-04-24"
+---
+# Plots for pyranges v1 paper 2025
+
+Import libraries
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(ggplot2)
+library(cowplot)
+library(scales)
+library(ggsci)
+
+```
+
+Load data
+
+```{r }
+df1 = data.table(read.csv('collected_results.w_status.20.7.25.csv'))
+df2 = data.table(read.csv('collected_results.w_status.23.7.25.csv'))
+df3 = data.table(read.csv('collected_results.w_status.24.7.25.csv'))
+df1$replicate = 1
+df2$replicate = 2
+df3$replicate = 3
+df=rbind(df1, df2, df3)
+
+df$nrows <- as.integer(gsub("_", "", df$nrows))
+
+# levels in reverse alphabetical: pyranges first, and bedtools last, so colors are consistent if bedtools is removed
+df$library=factor(df$library, levels=sort(unique(df$library), decreasing=T) )
+
+# renaming, ordering levels
+df[genome=="hg38", genome:="genome"]
+df[operation=="intersection", operation:="overlap"]
+ops <- unique(df$operation)
+df$operation <- factor(df$operation,
+                        levels = c("overlap", sort(ops[ops != "overlap"])))
+
+# useful vars
+libs  <- as.character(unique(df$library))
+libs_other <- setdiff(libs, "pyranges")   # all competitors
+df
+```
+
+Do mean across the three replicates
+```{r}
+## -------------------------------------------------------------
+## 1.  Identify the columns you *don’t* want in the “design” key
+## -------------------------------------------------------------
+avg_cols <- c(
+  "s", "max_pss", "max_rss", "max_uss", "max_vms", "mean_load",
+  "cpu_time", "cpu_usage", "io_in", "io_out"
+)
+
+drop_cols   <- c("replicate", "jobid", "h.m.s")     # never part of the key
+dt=copy(df)
+dt[, (drop_cols) := NULL]
+key_cols    <- setdiff(names(dt), c(avg_cols, drop_cols))
+
+
+## -------------------------------------------------------------
+## 2.  Collapse replicates
+## -------------------------------------------------------------
+mdf <- dt[
+  , 
+      lapply(.SD, mean),               
+    by = key_cols,
+    .SDcols = avg_cols
+]
+
+setcolorder(mdf, setdiff(names(dt), drop_cols))  # original order, minus drop_cols
+#coll
+
+mdf = mdf[order(nrows, library, maxlength, operation, genome)]
+mdf
+```
+
+
+
+Wide tables: time_*  and mem_*. Excluding failed jobs
+
+```{r}
+z=mdf[status=="ok"]
+
+time_wide <- dcast(
+  z,
+  operation + genome + nrows + maxlength ~ library,
+  value.var      = "cpu_time",
+  fun.aggregate  = mean
+)
+#time_wide
+setnames(time_wide, libs, paste0("time_", libs))
+
+mem_wide  <- dcast(
+  z ,
+  operation + genome + nrows + maxlength ~ library,
+  value.var      = "max_rss",
+  fun.aggregate  = mean
+)
+setnames(mem_wide, libs, paste0("mem_", libs))
+
+cond_cols = setdiff(names(mem_wide), paste0("mem_", libs))
+#cond_cols
+## Combined table: one row per condition
+bench_wide <- merge(time_wide, mem_wide, by = cond_cols, all = TRUE)
+
+time_cols <- grep("^time_", names(bench_wide), value = TRUE)
+mem_cols  <- grep("^mem_",  names(bench_wide), value = TRUE)
+pyr_time_col <- "time_pyranges"
+pyr_mem_col  <- "mem_pyranges"
+time_other <- setdiff(time_cols, pyr_time_col)
+mem_other  <- setdiff(mem_cols,  pyr_mem_col)
+
+# helper that returns a list(best_value, best_library) over .SD
+best_other <- function(mat, strip) {
+  idx <- apply(mat, 1, function(x) if (all(is.na(x))) NA_integer_ else which.min(x))
+  best_val <- mat[cbind(seq_len(nrow(mat)), idx)]
+  best_lib <- gsub(strip, "", colnames(mat)[idx])
+  list(best_val, best_lib)
+}
+
+
+# ────────────────────────────────────────────────────────────────
+#   Per-library fold-change vs. PyRanges
+#     (>1 ⇒ PyRanges faster / leaner than that library)
+# ────────────────────────────────────────────────────────────────
+
+
+# Time fold-changes
+for (lib in libs_other) {
+  bench_wide[, (paste0("fold_change_time_", lib)) :=
+                get(paste0("time_", lib)) / get(pyr_time_col)]
+}
+
+# Memory fold-changes
+for (lib in libs_other) {
+  bench_wide[, (paste0("fold_change_mem_", lib)) :=
+                get(paste0("mem_", lib)) / get(pyr_mem_col)]
+}
+
+bench_wide
+
+```
+
+
+Calculating mean performances for big datasets, 10^6 or more rows
+```{r}
+row_subset <- bench_wide[nrows >= 1e6]  #note: bench_wide has already excluded fail status jobs
+# [,.( mFCtime= mean(fold_change_time), deltaMem = mean(delta_pct_mem, na.rm=T) )]
+
+mean_fc <- function(prefix) {
+  sapply(
+    libs_other,
+    function(lib)
+      mean(row_subset[[paste0(prefix, lib)]], na.rm = TRUE)
+  )
+}
+
+# ----- compute averages -----------------------------------------------------
+avg_time <- mean_fc("fold_change_time_")          # speed-up averages
+avg_mem  <- mean_fc("fold_change_mem_")           # RAM-ratio averages
+
+# ----- assemble tidy summary -----------------------------------------------
+avg_fold_changes <- data.table(
+  library              = libs_other,
+  avg_fold_change_time = avg_time,
+  avg_fold_change_mem  = avg_mem
+)
+
+avg_fold_changes [, delta_mem:=(1-1/avg_fold_change_mem)]
+print(avg_fold_changes)
+```
+
+
+Concise plot: only maxlength==100
+
+```{r fig.height=7, fig.width=6}
+sdf=mdf[maxlength==100][status=='ok']
+
+point_alpha=0.7
+named_color_scale = ggsci::pal_npg()(4)
+names(named_color_scale) = levels(sdf$library)
+color_scale = scale_color_manual(values=named_color_scale)
+
+time_plot_combined <- ggplot(sdf, aes(nrows, cpu_time, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(alpha=point_alpha) +
+  facet_grid(genome ~ operation, scales = 'free') +
+   scale_x_log10(
+     labels = trans_format("log10", math_format(10^.x))
+   ) +
+  color_scale+
+  scale_y_log10(labels = label_number()) +
+  scale_shape_manual(values=c(8, 19))+
+  xlab('Number of intervals') +
+  ylab('Running time (sec)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    # Legend styling
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+  
+    # Facet strip styling
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold")
+  )
+
+mem_plot_combined <- ggplot(sdf, aes(nrows, max_rss/1024, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(alpha=point_alpha) +
+  facet_grid(genome ~ operation, scales = 'free') +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))  ) +
+  scale_y_log10() + 
+  color_scale+
+  xlab('Number of intervals') +
+  ylab('Maximum memory used (GB)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    # Legend styling
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+  
+    # Facet strip styling
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold")
+  )
+
+
+combo_plot =
+  plot_grid(get_legend(time_plot_combined),
+          time_plot_combined + theme(legend.position = 'none') + xlab(''), 
+          mem_plot_combined + theme(legend.position = 'none'), 
+          ncol=1,
+          rel_heights = c(0.2, 1, 1), 
+          labels = c('', 'a', 'b')
+          
+)
+combo_plot
+suppressMessages(ggsave('combo_plot.pdf', combo_plot, width = 6))
+suppressMessages(ggsave('combo_plot.png', combo_plot, width = 6))
+#time_plot_combined
+
+```
+Full plots, including failed jobs and all maxlength
+
+```{r fig.height=15, fig.width=10}
+addx=0.93
+addy=0.98
+addtext="MaxLength"
+
+supp_time_plot_combined <- ggplot(mdf, aes(nrows, cpu_time, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(aes(shape=status), alpha=point_alpha) +
+  facet_grid(genome + maxlength ~ operation , scales = 'free') +
+   scale_x_log10(
+     labels = trans_format("log10", math_format(10^.x))
+   ) +
+  color_scale+
+  scale_y_log10(labels = label_number()) +
+  scale_shape_manual(values=c(8, 19))+
+  xlab('Number of intervals') +
+  ylab('Running time (sec)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    # Legend styling
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+  
+    # Facet strip styling
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold", angle = 0)
+  )
+
+
+the_legend = get_legend(supp_time_plot_combined)
+supp_time_plot_combined = supp_time_plot_combined + theme(legend.position = 'none') + xlab('')
+
+supp_time_plot_combined <- ggdraw(supp_time_plot_combined) +
+  draw_label(
+    addtext,
+    x = addx,               # near right edge
+    y = addy,               # near top edge
+    hjust = 1, vjust = 1,
+    fontface = "bold",
+    size=9
+    
+  )
+
+supp_mem_plot_combined <- ggplot(mdf, aes(nrows, max_rss/1024, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(aes(shape=status), alpha=point_alpha) +
+  facet_grid(genome + maxlength ~ operation, scales = 'free') +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))  ) +
+  scale_y_log10() +
+  color_scale+
+  scale_shape_manual(values=c(8, 19))+
+  xlab('Number of intervals') +
+  ylab('Maximum memory used (GB)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    # Legend styling
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+  
+    # Facet strip styling
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold", angle = 0)
+  )
+
+supp_mem_plot_combined = supp_mem_plot_combined + theme(legend.position = 'none')
+
+supp_mem_plot_combined <- ggdraw(supp_mem_plot_combined) +
+  draw_label(
+    addtext,
+    x = addx,               # near right edge
+    y = addy,               # near top edge
+    hjust = 1, vjust = 1,
+    fontface = "bold",
+    size=9
+    
+  )
+
+full_combo_plot =
+  plot_grid(the_legend,
+          supp_time_plot_combined , 
+          supp_mem_plot_combined , 
+          ncol=1,
+          rel_heights = c(0.2, 1, 1), 
+          labels = c('', 'a', 'b')
+          
+)
+full_combo_plot
+suppressMessages(ggsave('combo_plot.full.pdf', full_combo_plot, width = 10, height = 15))
+suppressMessages(ggsave('combo_plot.full.png', full_combo_plot, width = 10, height = 15))
+```
+
