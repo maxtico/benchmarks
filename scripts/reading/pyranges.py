@@ -1,8 +1,8 @@
 from pathlib import Path
 import pandas as pd
-import pyranges as pr
+import pyranges1 as pr
 import numpy as np
-from pyranges import PyRanges
+from pyranges1 import PyRanges
 
 
 def read(

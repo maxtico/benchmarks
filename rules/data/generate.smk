@@ -7,7 +7,7 @@ rule generate_file:
     output:
         "{DOWNLOAD_DIR}/generated/{filetype}/{genome}/{nrows}/{maxlength}.bed"
     run:
-        import pyranges as pr
+        import pyranges1 as pr
         import pandas as pd
         rows = int(wildcards.nrows)
         maxlength = int(wildcards.maxlength)
