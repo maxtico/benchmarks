@@ -4,6 +4,7 @@
     "output_dir": "~/benchmark_pyranges",
     "library_to_language": {
         "bioframe": "py",
+        "polars_bio": "py",
         "pyranges": "py",
         "genomicranges": "R",
         "bedtools": "sh"

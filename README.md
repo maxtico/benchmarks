@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe and pyranges; R's GenomicRanges; and bash's bedtools).
+Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe, polars-bio and pyranges; R's GenomicRanges; and bash's bedtools).
 
 The workflow:
 
@@ -22,15 +22,23 @@ Python packages
 ~~~~~~~~~~~~~~~
 Assuming mamba is installed, do:
 
-mamba create -yn bench python
+mamba create -yn bench python=3.12
 mamba activate bench
 
 pip install snakemake
-pip install pyranges1 bioframe
+pip install pyranges1 bioframe polars-bio[pandas]
 
 Now test:
 
-python -c 'import bioframe; import pyranges'
+python -c 'import bioframe; import polars_bio; import pyranges'
+
+Notes for polars-bio
+~~~~~~~~~~~~~~~~~~~~
+
+- The benchmark inputs in this repo are BED-style, 0-based, half-open intervals.
+- polars-bio defaults to 1-based coordinates unless metadata says otherwise.
+- The reader in `scripts/reading/polars_bio.py` sets `df.attrs["coordinate_system_zero_based"] = True` so interval operations match the other Python libraries.
+- The generated benchmark files have 3 BED columns, so reading them through pandas and passing explicit `cols=["chrom", "start", "end"]` is simpler than relying on `polars_bio.read_bed()`, which expects BED4.
 
 R packages
 ~~~~~~~~~~
@@ -92,4 +100,4 @@ Intersect:
 Find nearest interval:
 - Overlaps: GenomicRanges does not allow you to ignore the overlapping intervals. The other libraries ignore overlaps.
 - Ties: Bioframe does not get all ties (nearest at same distance), and instead it only keeps one. 
-- k-nearest: In the benchmark, Bioframe, Pyranges, and BEDTools are requested to get the two nearest intervals per interval, but GenomicRanges cannot; thus, GenomicRanges only finds the single nearest interval.
+- k-nearest: In the benchmark, Bioframe, polars-bio, Pyranges, and BEDTools are requested to get the two nearest intervals per interval, but GenomicRanges cannot; thus, GenomicRanges only finds the single nearest interval.

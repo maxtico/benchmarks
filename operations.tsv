@@ -14,6 +14,11 @@ bioframe,intersection,binary
 bioframe,subtract,binary
 bioframe,merge,unary
 bioframe,cluster,unary
+polars_bio,nearest,binary
+polars_bio,intersection,binary
+polars_bio,subtract,binary
+polars_bio,merge,unary
+polars_bio,cluster,unary
 pyranges,nearest,binary
 pyranges,intersection,binary
 pyranges,subtract,binary

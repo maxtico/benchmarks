@@ -1,0 +1,25 @@
+import time
+import polars_bio as pb
+
+from lib.helpers import get_files, write_result
+
+start = time.time()
+annotations, reads = get_files("polars_bio")
+print(time.time() - start, "reading")
+
+start = time.time()
+df = pb.nearest(
+    annotations,
+    reads,
+    cols1=["chrom", "start", "end"],
+    cols2=["chrom", "start", "end"],
+    k=2,
+    overlap=False,
+    distance=False,
+    output_type="pandas.DataFrame",
+)
+print(time.time() - start, "overlaps")
+
+start = time.time()
+write_result("binary", str(len(df)))
+print(time.time() - start)

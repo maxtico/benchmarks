@@ -34,6 +34,8 @@ def get_run_cmd(library: str, command: str) -> str:
 def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     if library == "bioframe":
         from scripts.reading.bioframe import read
+    elif library == "polars_bio":
+        from scripts.reading.polars_bio import read
     elif library == "pyranges":
         from scripts.reading.pyranges import read
 
@@ -45,6 +47,8 @@ def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 def get_file(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     if library == "bioframe":
         from scripts.reading.bioframe import read
+    elif library == "polars_bio":
+        from scripts.reading.polars_bio import read
     elif library == "pyranges":
         from scripts.reading.pyranges import read
 
