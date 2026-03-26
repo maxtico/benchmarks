@@ -30,11 +30,10 @@ pip install pyranges1 bioframe polars-bio[pandas]
 
 Now test:
 
-python -c 'import bioframe; import polars_bio; import pyranges'
+python -c 'import bioframe; import polars_bio; import pyranges1'
 
 Notes for polars-bio
 ~~~~~~~~~~~~~~~~~~~~
-
 - The benchmark inputs in this repo are BED-style, 0-based, half-open intervals.
 - polars-bio defaults to 1-based coordinates unless metadata says otherwise.
 - The reader in `scripts/reading/polars_bio.py` sets `df.attrs["coordinate_system_zero_based"] = True` so interval operations match the other Python libraries.
