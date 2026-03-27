@@ -36,8 +36,8 @@ def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         from scripts.reading.bioframe import read
     elif library == "polars_bio":
         from scripts.reading.polars_bio import read
-    elif library == "pyranges":
-        from scripts.reading.pyranges import read
+    elif library == "pyranges_1":
+        from scripts.reading.pyranges_1 import read
 
     annotations = read(Path(sys.argv[1]))
     reads = read(Path(sys.argv[2]))
@@ -49,8 +49,8 @@ def get_file(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         from scripts.reading.bioframe import read
     elif library == "polars_bio":
         from scripts.reading.polars_bio import read
-    elif library == "pyranges":
-        from scripts.reading.pyranges import read
+    elif library == "pyranges_1":
+        from scripts.reading.pyranges_1 import read
 
     annotations = read(Path(sys.argv[1]))
     return annotations
