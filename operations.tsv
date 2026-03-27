@@ -10,6 +10,8 @@ bedtools,intersection,binary
 bedtools,subtract,binary
 bedtools,merge,unary
 bedtools,cluster,unary
+bedops,intersection,binary
+bedops,merge,unary
 bioframe,nearest,binary
 bioframe,intersection,binary
 bioframe,subtract,binary

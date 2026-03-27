@@ -4,6 +4,7 @@
     "output_dir": "~/benchmark_pyranges",
     "library_to_language": {
         "ailist": "sh",
+        "bedops": "sh",
         "bioframe": "py",
         "polars_bio": "py",
         "pyranges": "py",

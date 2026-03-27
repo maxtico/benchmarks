@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe, polars-bio and pyranges; R's GenomicRanges; bash's bedtools; and AIList for overlap counting).
+Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe, polars-bio and pyranges; R's GenomicRanges; bash's bedtools and BEDOPS; and AIList for overlap counting).
 
 The workflow:
 
@@ -72,6 +72,17 @@ Assuming Linux Ubuntu or similar, paste on the command-line:
 
 sudo apt-get install bedtools
 
+BEDOPS
+~~~~~~
+
+BEDOPS is included for `intersection` and `merge`.
+
+Assuming Linux Ubuntu or similar, paste on the command-line:
+
+sudo apt-get install bedops
+
+BEDOPS tools require sorted BED input. The benchmark scripts sort inputs with `sort-bed` before calling `bedops`.
+
 AIList
 ~~~~~~
 
@@ -112,6 +123,7 @@ Notes on the different behavior of methods/operations in different libraries
 ============================================================================
 Intersect:
 - the name of this operation may be misleading. All libraries are performing just a filter on the input "annotation" intervals that overlap with the "reads" intervals.
+- For BEDOPS, this benchmark uses `bedops --element-of 1` rather than `bedops --intersect`, because `--element-of 1` returns overlapping intervals from the first input and matches the benchmark semantics more closely.
 - AIList is only benchmarked for this binary overlap/intersection case; it is not included for nearest, subtract, merge, or cluster.
 
 Find nearest interval:
