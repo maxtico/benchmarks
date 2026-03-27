@@ -12,6 +12,8 @@ bedtools,merge,unary
 bedtools,cluster,unary
 bedops,intersection,binary
 bedops,merge,unary
+bedtk,intersection,binary
+bedtk,merge,unary
 bioframe,nearest,binary
 bioframe,intersection,binary
 bioframe,subtract,binary

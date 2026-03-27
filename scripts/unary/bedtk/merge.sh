@@ -1,0 +1,1 @@
+bedtk merge "$1"
