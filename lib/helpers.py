@@ -36,6 +36,8 @@ def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         from scripts.reading.bioframe import read
     elif library == "polars_bio":
         from scripts.reading.polars_bio import read
+    elif library == "pyranges_0":
+        from scripts.reading.pyranges_0 import read
     elif library == "pyranges_1":
         from scripts.reading.pyranges_1 import read
 
@@ -49,6 +51,8 @@ def get_file(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         from scripts.reading.bioframe import read
     elif library == "polars_bio":
         from scripts.reading.polars_bio import read
+    elif library == "pyranges_0":
+        from scripts.reading.pyranges_0 import read
     elif library == "pyranges_1":
         from scripts.reading.pyranges_1 import read
 

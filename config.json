@@ -8,7 +8,8 @@
         "bedtk": "sh",
         "bioframe": "py",
         "polars_bio": "py",
-        "pyranges": "py",
+        "pyranges_0": "py",
+        "pyranges_1": "py",
         "genomicranges": "R",
         "bedtools": "sh"
     },

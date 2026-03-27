@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe, polars-bio and pyranges; R's GenomicRanges; bash's bedtools, BEDOPS and bedtk; and AIList for overlap counting).
+Benchmark the speed and memory footprint of common genomic-interval operations across several libraries (Python's bioframe, polars-bio, pyranges v0 and pyranges v1; R's GenomicRanges; bash's bedtools, BEDOPS and bedtk; and AIList for overlap counting).
 
 The workflow:
 
@@ -27,11 +27,16 @@ mamba create -yn bench python=3.12
 mamba activate bench
 
 pip install snakemake
-pip install pyranges1 bioframe polars-bio[pandas]
+pip install pyranges=0.1.4 pyranges1 bioframe polars-bio[pandas]
 
 Now test:
 
-python -c 'import bioframe; import polars_bio; import pyranges1'
+python -c 'import bioframe; import polars_bio; import pyranges; import pyranges1'
+
+In this benchmark:
+
+* `pyranges_0` refers to the legacy `pyranges` package import.
+* `pyranges_1` refers to the newer `pyranges1` package import.
 
 
 Notes for polars-bio
