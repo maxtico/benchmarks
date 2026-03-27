@@ -3,6 +3,7 @@
     "library_to_operations_mapping": "operations.tsv",
     "output_dir": "~/benchmark_pyranges",
     "library_to_language": {
+        "ailist": "sh",
         "bioframe": "py",
         "polars_bio": "py",
         "pyranges": "py",
