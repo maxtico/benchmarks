@@ -7,7 +7,7 @@ annotations, reads = get_files("pyranges_0")
 print(time.time() - start, "reading")
 
 start = time.time()
-df = annotations.subtract_overlaps(reads, strand_behavior="ignore")
+df = annotations.subtract(reads, strandedness=False)
 print(time.time() - start, "overlaps")
 
 start = time.time()
