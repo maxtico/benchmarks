@@ -19,9 +19,9 @@ library(ggsci)
 Load data
 
 ```{r }
-df1 = data.table(read.csv('collected_results.w_status.20.7.25.csv'))
-df2 = data.table(read.csv('collected_results.w_status.23.7.25.csv'))
-df3 = data.table(read.csv('collected_results.w_status.24.7.25.csv'))
+df1 = data.table(read.csv('collected_results/collected_results.with_status.010426.csv'))
+df2 = data.table(read.csv('collected_results/collected_results.with_status.010426.csv'))
+df3 = data.table(read.csv('collected_results/collected_results.with_status.010426.csv'))
 df1$replicate = 1
 df2$replicate = 2
 df3$replicate = 3
@@ -109,8 +109,8 @@ bench_wide <- merge(time_wide, mem_wide, by = cond_cols, all = TRUE)
 
 time_cols <- grep("^time_", names(bench_wide), value = TRUE)
 mem_cols  <- grep("^mem_",  names(bench_wide), value = TRUE)
-pyr_time_col <- "time_pyranges"
-pyr_mem_col  <- "mem_pyranges"
+pyr_time_col <- "time_pyranges_1"
+pyr_mem_col  <- "mem_pyranges_1"
 time_other <- setdiff(time_cols, pyr_time_col)
 mem_other  <- setdiff(mem_cols,  pyr_mem_col)
 
@@ -181,7 +181,7 @@ Concise plot: only maxlength==100
 sdf=mdf[maxlength==100][status=='ok']
 
 point_alpha=0.7
-named_color_scale = ggsci::pal_npg()(4)
+named_color_scale = ggsci::pal_npg()(9)
 names(named_color_scale) = levels(sdf$library)
 color_scale = scale_color_manual(values=named_color_scale)
 
