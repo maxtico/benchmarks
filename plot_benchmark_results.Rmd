@@ -13,7 +13,7 @@ library(ggplot2)
 library(cowplot)
 library(scales)
 library(ggsci)
-
+library(reshape2)
 ```
 
 Load data
@@ -173,81 +173,209 @@ avg_fold_changes <- data.table(
 avg_fold_changes [, delta_mem:=(1-1/avg_fold_change_mem)]
 print(avg_fold_changes)
 ```
+Average fold change in memory and time
 
+```{r}
+df_long <- melt(avg_fold_changes, id.vars="library",
+                measure.vars=c("avg_fold_change_time","avg_fold_change_mem"),
+                variable.name="metric", value.name="fold_change")
+
+# Canviar noms per llegenda més clara
+df_long$metric <- factor(df_long$metric,
+                         levels = c("avg_fold_change_time", "avg_fold_change_mem"),
+                         labels = c("Time", "Memory"))
+
+# Colors definits
+my_colors <- c("Time" = "#3C5488B3", "Memory" = "#C8A0FFB3")
+
+# Plot
+avg_fold_ch_plot <- ggplot(df_long, aes(x=library, y=fold_change, fill=metric)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  scale_y_log10() +
+  scale_fill_manual(name="Average fold change", values=my_colors) +
+  xlab("Library") +
+  ylab("Average fold change") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+suppressMessages(ggsave('average_fold_change_library.pdf', avg_fold_ch_plot, width = 6, height= 3))
+```
 
 Concise plot: only maxlength==100
 
 ```{r fig.height=7, fig.width=6}
 sdf=mdf[maxlength==100][status=='ok']
 
-point_alpha=0.7
-named_color_scale = ggsci::pal_npg()(9)
-names(named_color_scale) = levels(sdf$library)
-color_scale = scale_color_manual(values=named_color_scale)
+# alpha for all geom_line/geom_point
+point_alpha <- 0.7
 
+# libraries
+libs <- levels(sdf$library)
+
+# assigning colors pyranges_1 red, the rest with NPG with alpha /transparency)
+named_color_scale <- ggsci::pal_npg()(length(libs))
+names(named_color_scale) <- libs
+
+# Pyranges to red
+named_color_scale["pyranges_1"] <- "red"
+lilac <- rgb(200/255, 160/255, 255/255, alpha = point_alpha)  # purple pastel w alpha
+named_color_scale["bedops"] <- lilac    # Bedops purple
+
+# The rest with transparency
+for (lib in libs) {
+  if (!(lib %in% c("pyranges_1","bedops"))) {
+    col <- col2rgb(named_color_scale[lib])/255
+    named_color_scale[lib] <- rgb(col[1], col[2], col[3], alpha=point_alpha)
+  }
+}
+
+color_scale <- scale_color_manual(values = named_color_scale)
+
+# Time plot
 time_plot_combined <- ggplot(sdf, aes(nrows, cpu_time, color = library)) +
   geom_line(alpha=point_alpha) +
   geom_point(alpha=point_alpha) +
   facet_grid(genome ~ operation, scales = 'free') +
-   scale_x_log10(
-     labels = trans_format("log10", math_format(10^.x))
-   ) +
-  color_scale+
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
+  color_scale +
   scale_y_log10(labels = label_number()) +
-  scale_shape_manual(values=c(8, 19))+
   xlab('Number of intervals') +
   ylab('Running time (sec)') +
   theme_bw() +
   theme(
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     plot.title = element_text(hjust = 0.5),
-    # Legend styling
     legend.position = "top",
     legend.background = element_rect(fill = "white", color = "black"),
-  
-    # Facet strip styling
     strip.background = element_rect(fill = "lightgrey", color = NA),
     strip.text = element_text(face = "bold")
   )
 
+# Memory plot
 mem_plot_combined <- ggplot(sdf, aes(nrows, max_rss/1024, color = library)) +
   geom_line(alpha=point_alpha) +
   geom_point(alpha=point_alpha) +
   facet_grid(genome ~ operation, scales = 'free') +
-  scale_x_log10(labels = trans_format("log10", math_format(10^.x))  ) +
-  scale_y_log10() + 
-  color_scale+
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10() +
+  color_scale +
   xlab('Number of intervals') +
   ylab('Maximum memory used (GB)') +
   theme_bw() +
   theme(
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     plot.title = element_text(hjust = 0.5),
-    # Legend styling
     legend.position = "top",
     legend.background = element_rect(fill = "white", color = "black"),
-  
-    # Facet strip styling
     strip.background = element_rect(fill = "lightgrey", color = NA),
     strip.text = element_text(face = "bold")
   )
 
-
-combo_plot =
-  plot_grid(get_legend(time_plot_combined),
-          time_plot_combined + theme(legend.position = 'none') + xlab(''), 
-          mem_plot_combined + theme(legend.position = 'none'), 
-          ncol=1,
-          rel_heights = c(0.2, 1, 1), 
-          labels = c('', 'a', 'b')
-          
+# Combo plot
+combo_plot <- plot_grid(
+  get_legend(time_plot_combined),
+  time_plot_combined + theme(legend.position = 'none') + xlab(''), 
+  mem_plot_combined + theme(legend.position = 'none'), 
+  ncol = 1,
+  rel_heights = c(0.2, 1, 1),
+  labels = c('', 'a', 'b')
 )
+
 combo_plot
-suppressMessages(ggsave('combo_plot.pdf', combo_plot, width = 6))
-suppressMessages(ggsave('combo_plot.png', combo_plot, width = 6))
-#time_plot_combined
+
+suppressMessages(ggsave('combo_plot_supplementary.pdf', combo_plot, width = 6))
+suppressMessages(ggsave('combo_plot_supplementary.png', combo_plot, width = 6))
 
 ```
+Plots with less data for figure
+```{r fig.height=7, fig.width=6}
+sdf=mdf[maxlength==100][status=='ok']
+
+# Libraries we want to compare
+libs_to_keep <- c("pyranges_1", "polars_bio", "bioframe", "bedtools", "genomicranges")
+sdf <- sdf[library %in% libs_to_keep]
+
+sdf$library <- factor(sdf$library, levels = libs_to_keep)
+
+# alpha for all geom_line/geom_point
+point_alpha <- 0.7
+
+# Libraries
+libs <- levels(sdf$library)
+
+# Assigning colors
+named_color_scale <- ggsci::pal_npg()(length(libs))
+names(named_color_scale) <- libs
+
+# Manual defined colors
+named_color_scale <- c(
+  pyranges_1    = "red",
+  polars_bio    = "#00A087B3",
+  genomicranges = "#3C5488B3",
+  bioframe      = "#F39B7FB3",
+  bedtools      = "#8491B4B3"
+)
+
+color_scale <- scale_color_manual(values = named_color_scale)
+
+# Time plot
+time_plot_combined <- ggplot(sdf, aes(nrows, cpu_time, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(alpha=point_alpha) +
+  facet_grid(genome ~ operation, scales = 'free') +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
+  color_scale +
+  scale_y_log10(labels = label_number()) +
+  xlab('Number of intervals') +
+  ylab('Running time (sec)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold")
+  )
+
+# Memory plot
+mem_plot_combined <- ggplot(sdf, aes(nrows, max_rss/1024, color = library)) +
+  geom_line(alpha=point_alpha) +
+  geom_point(alpha=point_alpha) +
+  facet_grid(genome ~ operation, scales = 'free') +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10() +
+  color_scale +
+  xlab('Number of intervals') +
+  ylab('Maximum memory used (GB)') +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top",
+    legend.background = element_rect(fill = "white", color = "black"),
+    strip.background = element_rect(fill = "lightgrey", color = NA),
+    strip.text = element_text(face = "bold")
+  )
+
+# Combo plot
+combo_plot <- plot_grid(
+  get_legend(time_plot_combined),
+  time_plot_combined + theme(legend.position = 'none') + xlab(''), 
+  mem_plot_combined + theme(legend.position = 'none'), 
+  ncol = 1,
+  rel_heights = c(0.2, 1, 1),
+  labels = c('', 'a', 'b')
+)
+
+combo_plot
+
+suppressMessages(ggsave('combo_plot_filtered.pdf', combo_plot, width = 6))
+suppressMessages(ggsave('combo_plot_filtered.png', combo_plot, width = 6))
+
+```
+
+
 Full plots, including failed jobs and all maxlength
 
 ```{r fig.height=15, fig.width=10}
