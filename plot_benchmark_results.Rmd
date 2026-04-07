@@ -14,6 +14,8 @@ library(cowplot)
 library(scales)
 library(ggsci)
 library(reshape2)
+library(dplyr)
+library(data.table)
 ```
 
 Load data
@@ -128,7 +130,7 @@ best_other <- function(mat, strip) {
 #     (>1 ⇒ PyRanges faster / leaner than that library)
 # ────────────────────────────────────────────────────────────────
 
-
+setDT(bench_wide)
 # Time fold-changes
 for (lib in libs_other) {
   bench_wide[, (paste0("fold_change_time_", lib)) :=
@@ -229,47 +231,135 @@ for (lib in libs) {
   }
 }
 
-color_scale <- scale_color_manual(values = named_color_scale)
+fill_scale <- scale_fill_manual(values = named_color_scale)
 
-# Time plot
-time_plot_combined <- ggplot(sdf, aes(nrows, cpu_time, color = library)) +
-  geom_line(alpha=point_alpha) +
-  geom_point(alpha=point_alpha) +
+# Ordenem el factor 'library' dins de cada combinació genome + nrows
+sdf_ordered <- sdf %>%
+  group_by(genome, operation, nrows) %>%
+  mutate(library_reordered = reorder_within(library, cpu_time, nrows)) %>%
+  ungroup()
+
+# Llista de totes les libraries, operations i nrows
+all_combinations <- expand.grid(
+  library = unique(sdf_ordered$library),
+  operation = unique(sdf_ordered$operation),
+  nrows = unique(sdf_ordered$nrows),
+  genome = unique(sdf_ordered$genome),
+  stringsAsFactors = FALSE
+)
+
+# Left join amb les dades originals
+sdf_filled <- all_combinations %>%
+  left_join(sdf_ordered, by = c("library", "operation", "nrows", "genome")) %>%
+  group_by(genome, operation, library) %>%
+  mutate(
+    # Si no té valor en aquest nrows
+    cpu_time_plot = ifelse(is.na(cpu_time), 1, cpu_time),  # valor petit per log scale
+    
+    # Assigna etiqueta segons el tipus de missing
+    label_missing = case_when(
+      !is.na(cpu_time) ~ NA_character_,                      # si hi ha valor, no posar res
+      all(is.na(cpu_time)) ~ "-",                             # si està absent en TOTS els nrows d'aquesta operation → "-"
+      TRUE ~ "x"                                              # si hi ha valor en algun altre nrows → "x"
+    )
+  ) %>%
+  ungroup()
+
+library_order <- sdf_filled %>%
+  group_by(library) %>%
+  summarise(avg_cpu = mean(cpu_time, na.rm = TRUE)) %>%
+  arrange(avg_cpu) %>%
+  pull(library)   # vector de libraries ordenat de més ràpida a més lenta
+
+sdf_filled <- sdf_filled %>%
+  mutate(library = factor(library, levels = library_order))
+
+# Després fem el plot amb geom_col
+time_plot_combined <- ggplot(sdf_filled, aes(x = nrows, y = cpu_time_plot, fill = library)) +
+  geom_col(
+    position = position_dodge2(width = 0.8, preserve = "single"),
+    width = 0.75,
+    alpha = point_alpha
+  ) +
+  geom_text(aes(label = label_missing), 
+            position = position_dodge2(width = 0.8),
+            vjust = -0.5, na.rm = TRUE) +
   facet_grid(genome ~ operation, scales = 'free') +
   scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
-  color_scale +
   scale_y_log10(labels = label_number()) +
+  fill_scale +
   xlab('Number of intervals') +
   ylab('Running time (sec)') +
   theme_bw() +
   theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    axis.text.x = element_text(angle = 90, vjust = 1, hjust = 4),
     plot.title = element_text(hjust = 0.5),
     legend.position = "top",
     legend.background = element_rect(fill = "white", color = "black"),
     strip.background = element_rect(fill = "lightgrey", color = NA),
     strip.text = element_text(face = "bold")
-  )
+  ) 
 
-# Memory plot
-mem_plot_combined <- ggplot(sdf, aes(nrows, max_rss/1024, color = library)) +
-  geom_line(alpha=point_alpha) +
-  geom_point(alpha=point_alpha) +
+# 1️⃣ Reordena library dins de cada combinació genome + nrows
+sdf_mem_ordered <- sdf %>%
+  group_by(genome, operation, nrows) %>%
+  mutate(library_reordered = reorder_within(library, max_rss, nrows)) %>%
+  ungroup()
+
+# 2️⃣ Expandeix totes les combinacions possibles
+all_combinations_mem <- expand.grid(
+  library = unique(sdf_mem_ordered$library),
+  operation = unique(sdf_mem_ordered$operation),
+  nrows = unique(sdf_mem_ordered$nrows),
+  genome = unique(sdf_mem_ordered$genome),
+  stringsAsFactors = FALSE
+)
+
+# 3️⃣ Left join amb les dades originals
+sdf_mem_filled <- all_combinations_mem %>%
+  left_join(sdf_mem_ordered, by = c("library", "operation", "nrows", "genome")) %>%
+  group_by(genome, operation, library) %>%
+  mutate(
+    # valor petit per log scale si no hi ha dades
+    mem_plot_value = ifelse(is.na(max_rss), 0.001, max_rss/1024),  # GB
+    
+    # assigna etiqueta segons el tipus de missing
+    label_missing = case_when(
+      !is.na(max_rss) ~ NA_character_,
+      all(is.na(max_rss)) ~ "-",   # absent en tots els nrows per a aquesta operation
+      TRUE ~ "x"                    # absent en aquest nrows però existeix en altres
+    )
+  ) %>%
+  ungroup()
+
+#  Assigna factor amb aquest ordre al dataframe
+sdf_mem_filled <- sdf_mem_filled %>%
+  mutate(library = factor(library, levels = library_order))
+
+
+mem_plot_combined <- ggplot(sdf_mem_filled, aes(x = nrows, y = mem_plot_value, fill = library)) +
+  geom_col(
+    position = position_dodge2(width = 0.8, preserve = "single"),
+    width = 0.75,
+    alpha = point_alpha
+  ) +
+  geom_text(aes(label = label_missing), 
+            position = position_dodge2(width = 0.8),
+            vjust = -0.5, na.rm = TRUE) +
   facet_grid(genome ~ operation, scales = 'free') +
   scale_x_log10(labels = trans_format("log10", math_format(10^.x))) +
-  scale_y_log10() +
-  color_scale +
+  fill_scale +
   xlab('Number of intervals') +
   ylab('Maximum memory used (GB)') +
   theme_bw() +
   theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    axis.text.x = element_text(angle = 90, vjust = 0, hjust = 4),
     plot.title = element_text(hjust = 0.5),
     legend.position = "top",
     legend.background = element_rect(fill = "white", color = "black"),
     strip.background = element_rect(fill = "lightgrey", color = NA),
     strip.text = element_text(face = "bold")
-  )
+  ) 
 
 # Combo plot
 combo_plot <- plot_grid(
@@ -283,8 +373,8 @@ combo_plot <- plot_grid(
 
 combo_plot
 
-suppressMessages(ggsave('combo_plot_supplementary.pdf', combo_plot, width = 6))
-suppressMessages(ggsave('combo_plot_supplementary.png', combo_plot, width = 6))
+suppressMessages(ggsave('combo_plot_supplementary.pdf', combo_plot, width = 20, height = 16))
+suppressMessages(ggsave('combo_plot_supplementary.png', combo_plot, width = 20, height = 16))
 
 ```
 Plots with less data for figure
