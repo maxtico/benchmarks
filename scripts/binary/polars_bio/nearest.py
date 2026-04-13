@@ -13,10 +13,6 @@ df = pb.nearest(
     reads,
     cols1=["chrom", "start", "end"],
     cols2=["chrom", "start", "end"],
-    k=2,
-    overlap=False,
-    distance=False,
-    output_type="pandas.DataFrame",
 )
 print(time.time() - start, "overlaps")
 

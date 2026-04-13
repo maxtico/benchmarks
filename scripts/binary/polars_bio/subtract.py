@@ -13,7 +13,6 @@ df = pb.subtract(
     reads,
     cols1=["chrom", "start", "end"],
     cols2=["chrom", "start", "end"],
-    output_type="pandas.DataFrame",
 )
 print(time.time() - start, "overlaps")
 
