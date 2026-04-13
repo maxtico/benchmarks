@@ -17,9 +17,15 @@ configfile: CONFIGURATION_PATH
 sample_sheet = pd.read_csv(config["sample_sheet"])
 
 WORKDIR = Path(config["output_dir"]).expanduser()
-RESULTS_DIR = Path(WORKDIR / "results")
-BENCHMARK_DIR = Path(WORKDIR / "results")
-DOWNLOAD_DIR = Path(WORKDIR / "downloads")
+SIMULATED_ROOT = Path(WORKDIR / "simulated_data")
+REAL_ROOT = Path(WORKDIR / "real_data")
+SIM_DOWNLOAD_DIR = Path(SIMULATED_ROOT / "downloads")
+SIM_RESULTS_DIR = Path(SIMULATED_ROOT / "results")
+REAL_DOWNLOAD_DIR = Path(REAL_ROOT / "downloads")
+REAL_RESULTS_DIR = Path(REAL_ROOT / "results")
+RESULTS_DIR = SIM_RESULTS_DIR
+BENCHMARK_DIR = SIM_RESULTS_DIR
+DOWNLOAD_DIR = SIM_DOWNLOAD_DIR
 
 rule_files = Path("rules").rglob("**/*.smk")
 
@@ -33,7 +39,8 @@ binary_operations = library_to_operations_mapping[library_to_operations_mapping.
 
 genome_to_parameters_mapping = pd.read_csv(config["parameters_file"])
 
-files_to_create = []
+# Simulated data files
+files_to_create_sim = []
 for operation_type, library, operation in zip(
     library_to_operations_mapping.Type,
     library_to_operations_mapping.Library,
@@ -44,10 +51,10 @@ for operation_type, library, operation in zip(
             genome_to_parameters_mapping.NumberReads,
             genome_to_parameters_mapping.ReadMaxLength,
         ):
-        files_to_create.extend(
+        files_to_create_sim.extend(
             expand(
                     "{RESULTS_DIR}/{operation_type}/{operation}/{library}/{genome}/{nrows}/{maxlength}/benchmark.json",
-                    RESULTS_DIR=RESULTS_DIR,
+                    RESULTS_DIR=SIM_RESULTS_DIR,
                     operation=operation,
                     library=library,
                     genome=genome,
@@ -57,13 +64,35 @@ for operation_type, library, operation in zip(
                 )
         )
 
+# Real data files
+real_genomes = ["hg38", "proteome"]
+real_nrows = ["10_000", "100_000", "1_000_000", "10_000_000"]
+files_to_create_real = []
+for operation_type, library, operation in zip(
+    library_to_operations_mapping.Type,
+    library_to_operations_mapping.Library,
+    library_to_operations_mapping.Operation,
+):
+    if operation_type == "binary":
+        for genome in real_genomes:
+            for nrows in real_nrows:
+                files_to_create_real.append(
+                    REAL_RESULTS_DIR / f"{operation_type}/{operation}/{library}/{genome}/{nrows}/benchmark.json"
+                )
+    elif operation_type == "unary":
+        for nrows in real_nrows:
+            files_to_create_real.append(
+                REAL_RESULTS_DIR / f"{operation_type}/{operation}/{library}/{nrows}/benchmark.json"
+            )
+
 for rule_file in rule_files:
     include: rule_file
 
 
 rule all:
     input:
-        RESULTS_DIR / "collected_results.csv"
+        SIM_RESULTS_DIR / "collected_results.csv",
+        REAL_RESULTS_DIR / "collected_results.csv"
 
 
 

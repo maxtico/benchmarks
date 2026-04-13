@@ -17,5 +17,5 @@ df = pb.overlap(
 print(time.time() - start, "overlaps")
 
 start = time.time()
-write_result("binary", str(len(df)))
+write_result("binary", len(df.collect()))
 print(time.time() - start)
