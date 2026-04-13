@@ -1,3 +1,6 @@
 Name,OutPath,Type,Url
 gencode38,gencode/annotation.gtf.gz,Annotation,https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.basic.annotation.gtf.gz
 H1_cell_line,remc/H1_cell_line.bed.gz,Reads,https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM409nnn/GSM409307/suppl/GSM409307_UCSD.H1.H3K4me1.LL228.bed.gz
+annotation_real,real_data/annotation/Homo_sapiens.GRCh38.115.bed,Annotation,https://zenodo.org/records/19481358/files/Homo_sapiens.GRCh38.115.bed
+hg38_reads_real,real_data/reads/hg38/HG00133.hg38.bed,Reads,https://zenodo.org/records/19481358/files/HG00133.hg38.bed
+proteome_reads_real,real_data/reads/proteome/all_proteome.bed,Reads,https://zenodo.org/records/19481358/files/all_proteome.bed
