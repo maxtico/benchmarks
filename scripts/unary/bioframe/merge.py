@@ -1,10 +1,16 @@
+import sys
 import bioframe as bf
 import pandas as pd
+import numpy as np
 
-from lib.helpers import get_file, write_result
+from lib.helpers import write_result
 
-df = get_file("bioframe")
-print(df)
+input_file = sys.argv[1]
+df = bf.read_table(
+    input_file,
+    schema="bed3",
+    dtype={"chrom": str, "start": np.int64, "end": np.int64},
+)
 
 df = bf.merge(df, min_dist=None)
 

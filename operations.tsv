@@ -22,6 +22,8 @@ bioframe,cluster,unary
 polars_bio,nearest,binary
 polars_bio,intersection,binary
 polars_bio,subtract,binary
+polars_bio,merge,unary
+polars_bio,cluster,unary
 pyranges_0,nearest,binary
 pyranges_0,intersection,binary
 pyranges_0,subtract,binary
