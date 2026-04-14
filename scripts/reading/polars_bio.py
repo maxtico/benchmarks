@@ -12,7 +12,7 @@ def read(
         header=None,
         names=["chrom", "start", "end"],
         sep="\t",
-        dtype={"start": np.int32, "end": np.int32},
+        dtype={"chrom": str, "start": np.int32, "end": np.int32},
     )
     df.attrs["coordinate_system_zero_based"] = True
     print(df.dtypes)

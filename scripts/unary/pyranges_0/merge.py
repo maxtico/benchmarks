@@ -1,9 +1,10 @@
+import sys
 import pyranges as pr
 
-from lib.helpers import get_file, write_result
+from lib.helpers import write_result
 
-df = get_file("pyranges_0")
-print(df)
+input_file = sys.argv[1]
+df = pr.read_bed(input_file)
 
 df = df.merge()
 

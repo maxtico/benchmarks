@@ -12,7 +12,7 @@ def read(
         f,
         schema="bed3",
         nrows=nrows,
-        dtype={"start": np.int32, "end": np.int32},
+        dtype={"chrom": str, "start": np.int64, "end": np.int64},
     )
 
     if f.suffix == ".gtf":

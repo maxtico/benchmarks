@@ -1,8 +1,10 @@
-from lib.helpers import get_file, write_result
+import sys
 import pyranges1 as pr
 
-df = get_file("pyranges_1")
-print(df)
+from lib.helpers import write_result
+
+input_file = sys.argv[1]
+df = pr.read_bed(input_file)
 
 df = df.cluster_overlaps()
 
