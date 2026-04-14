@@ -1,0 +1,1 @@
+bedtools intersect -wa -c -a $1 -b $2
