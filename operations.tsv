@@ -1,5 +1,6 @@
 Library,Operation,Type
 ailist,count_overlaps,binary
+bedtk,set_intersect_overlaps,binary
 genomicranges,nearest,binary
 genomicranges,intersection,binary
 genomicranges,subtract,binary
@@ -33,11 +34,13 @@ pyranges_0,nearest,binary
 pyranges_0,intersection,binary
 pyranges_0,subtract,binary
 pyranges_0,count_overlaps,binary
+pyranges_0,set_intersect_overlaps,binary
 pyranges_0,merge,unary
 pyranges_0,cluster,unary
 pyranges_1,nearest,binary
 pyranges_1,intersection,binary
 pyranges_1,subtract,binary
 pyranges_1,count_overlaps,binary
+pyranges_1,set_intersect_overlaps,binary
 pyranges_1,merge,unary
 pyranges_1,cluster,unary
