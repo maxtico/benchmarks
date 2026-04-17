@@ -6,7 +6,7 @@ annotations, reads = get_files("pyranges_1")
 print(time.time() - start, "reading")
 
 start = time.time()
-df = annotations.nearest_ranges(reads, strand_behavior="ignore", k=2, exclude_overlaps=True)
+df = annotations.nearest_ranges(reads, strand_behavior="ignore", k=2, exclude_overlaps=True, preserve_input_order=False)
 print(time.time() - start, "overlaps")
 
 start = time.time()
