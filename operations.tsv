@@ -44,3 +44,8 @@ pyranges_1,count_overlaps,binary
 pyranges_1,set_intersect_overlaps,binary
 pyranges_1,merge,unary
 pyranges_1,cluster,unary
+genomicranges,read,unary
+polars_bio,read,unary
+bioframe,read,unary
+pyranges_1,read,unary
+pyranges_0,read,unary

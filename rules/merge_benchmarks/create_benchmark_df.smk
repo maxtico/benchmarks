@@ -12,12 +12,11 @@ rule create_benchmark_df_sim:
         for f in input:
             f = Path(f).parent / "snakemake_benchmark.jsonl"
             rowdict = json.loads(f.read_text())
-            del rowdict["input_size_mb"]
-            del rowdict["resources"]
-            del rowdict["params"]
-            wildcards = {k: v for k, v in rowdict["wildcards"].items()}
-            del wildcards["RESULTS_DIR"]
-            del rowdict["wildcards"]
+            rowdict.pop("input_size_mb", None)
+            rowdict.pop("resources", None)
+            rowdict.pop("params", None)
+            wildcards = {k: v for k, v in rowdict.pop("wildcards", {}).items()}
+            wildcards.pop("RESULTS_DIR", None)
             rowdict |= wildcards
 
             rowdicts.append(rowdict)
@@ -36,12 +35,11 @@ rule create_benchmark_df_real:
         for f in input:
             f = Path(f).parent / "snakemake_benchmark.jsonl"
             rowdict = json.loads(f.read_text())
-            del rowdict["input_size_mb"]
-            del rowdict["resources"]
-            del rowdict["params"]
-            wildcards = {k: v for k, v in rowdict["wildcards"].items()}
-            del wildcards["REAL_RESULTS_DIR"]
-            del rowdict["wildcards"]
+            rowdict.pop("input_size_mb", None)
+            rowdict.pop("resources", None)
+            rowdict.pop("params", None)
+            wildcards = {k: v for k, v in rowdict.pop("wildcards", {}).items()}
+            wildcards.pop("REAL_RESULTS_DIR", None)
             rowdict |= wildcards
 
             rowdicts.append(rowdict)

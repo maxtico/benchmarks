@@ -1,7 +1,7 @@
 {
     "sample_sheet": "sample_sheet.csv",
     "library_to_operations_mapping": "operations.tsv",
-    "output_dir": "~/benchmark_pyranges",
+    "output_dir": "/Paella/mtico/benchmarking_pyranges/benchmark_pyranges",
     "library_to_language": {
         "ailist": "sh",
         "bedops": "sh",

@@ -11,6 +11,10 @@ many problem sizes.
 3. Runs the same operation with every library and measures wall-clock time, and peak resident memory (RSS)
 4. Collects all benchmarks into a single CSV.
 
+The benchmark output is separated into two top-level branches:
+- `simulated_data/` for the existing generated inputs and results
+- `real_data/` for the new Zenodo-derived reads and annotation subsets
+
 The JSON and tabular files in this repo define the range of dataset parameters to be tested, as well as which operations are tested.
 
 The code under the folder scripts/ defines how each operation is implemented for each library.
