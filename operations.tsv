@@ -30,6 +30,12 @@ polars_bio,subtract,binary
 polars_bio,count_overlaps,binary
 polars_bio,merge,unary
 polars_bio,cluster,unary
+poranges,nearest,binary
+poranges,intersection,binary
+poranges,subtract,binary
+poranges,count_overlaps,binary
+poranges,merge,unary
+poranges,cluster,unary
 pyranges_0,nearest,binary
 pyranges_0,intersection,binary
 pyranges_0,subtract,binary

@@ -120,6 +120,17 @@ make
 
 Then either add `bin/ailist` to your `PATH` or symlink/copy it somewhere already on `PATH`.
 
+poranges
+~~~~~~~~
+
+poranges is included through a small Rust wrapper in `poranges_bench/`, pinned to commit `e86e9711fdd9ec126b2fb3805ad34eef7ffd1b2a` from `https://github.com/endrebak/poranges`.
+
+Install Rust/Cargo, then build the wrapper once before running Snakemake:
+
+cargo build --release --manifest-path poranges_bench/Cargo.toml
+
+The benchmark scripts call `poranges_bench/target/release/poranges-bench`. To use a different binary path, set `PORANGES_BENCH_BIN=/path/to/poranges-bench`.
+
 Usage
 =====
 
@@ -149,6 +160,13 @@ Intersect:
 - For BEDOPS, this benchmark uses `bedops --element-of 1` rather than `bedops --intersect`, because `--element-of 1` returns overlapping intervals from the first input and matches the benchmark semantics more closely.
 - bedtk is benchmarked with `bedtk isec` because that is the closest matching overlap operation exposed by the tool.
 - AIList is only benchmarked for this binary overlap/intersection case; it is not included for nearest, subtract, merge, or cluster.
+- poranges is benchmarked with `bio_overlap_ranges(..., multiple=All, strand_behavior=Ignore)`, which matches the benchmark's "filter annotation rows with any overlapping read" semantics.
+
+Count overlaps:
+- poranges currently exposes overlap pairs rather than a dedicated high-level count-overlaps operation. The benchmark computes overlap pairs with `range_overlap_pairs(..., match_by=["Chromosome"])` and materializes a per-annotation count vector, so the result shape matches the other count-overlap implementations.
+
+Set intersect overlaps:
+- poranges is not included for `set_intersect_overlaps`; the current public API does not expose an equivalent set-operation method.
 
 Find nearest interval:
 - Overlaps: GenomicRanges does not allow you to ignore the overlapping intervals. The other libraries ignore overlaps.
