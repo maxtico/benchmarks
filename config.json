@@ -8,6 +8,7 @@
         "bedtk": "sh",
         "bioframe": "py",
         "polars_bio": "py",
+        "polars_bio_left": "py",
         "poranges": "sh",
         "pyranges_0": "py",
         "pyranges_1": "py",

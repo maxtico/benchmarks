@@ -48,8 +48,8 @@ Notes for polars-bio
 
 * The benchmark inputs in this repo are BED-style, 0-based, half-open intervals.
 * polars-bio defaults to 1-based coordinates unless metadata says otherwise.
-* The reader in `scripts/reading/polars_bio.py` sets `df.attrs["coordinate_system_zero_based"] = True` so interval operations match the other Python libraries.
-* The generated benchmark files have 3 BED columns, so reading them through pandas and passing explicit `cols=["chrom", "start", "end"]` is simpler than relying on `polars_bio.read_bed()`, which expects BED4.
+* The reader in `scripts/reading/polars_bio.py` uses `polars_bio.scan_table()` and sets `df.config_meta.set(coordinate_system_zero_based=True)` so interval operations match the other Python libraries.
+* The generated benchmark files have 3 BED columns, so reading them through `scan_table(schema="bed3")` and passing explicit `cols=["chrom", "start", "end"]` is simpler than relying on `polars_bio.read_bed()`, which expects BED4.
 
 R packages
 ~~~~~~~~~~

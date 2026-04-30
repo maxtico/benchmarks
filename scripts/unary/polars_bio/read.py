@@ -1,11 +1,10 @@
 import sys
-import polars_bio as pb
-import numpy as np
-import pandas as pd
+from pathlib import Path
 
 from lib.helpers import write_result
+from scripts.reading.polars_bio import read
 
 input_file = sys.argv[1]
-df = pb.read_table(input_file)
+df = read(Path(input_file))
 
-write_result("unary", str(len(df)))
+write_result("unary", str(df.collect().height))
