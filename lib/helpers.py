@@ -2,8 +2,7 @@ import json
 from pathlib import Path
 import sys
 import time
-
-import pandas as pd
+from typing import Any
 
 
 JSON = str | int | float | bool | None | dict[str, "JSON"] | list["JSON"]
@@ -31,10 +30,10 @@ def get_run_cmd(library: str, command: str) -> str:
     raise AssertionError(msg)
 
 
-def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_files(library: str) -> tuple[Any, Any]:
     if library == "bioframe":
         from scripts.reading.bioframe import read
-    elif library == "polars_bio":
+    elif library in {"polars_bio", "polars_bio_left"}:
         from scripts.reading.polars_bio import read
     elif library == "pyranges_0":
         from scripts.reading.pyranges_0 import read
@@ -46,10 +45,10 @@ def get_files(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return annotations, reads
 
 
-def get_file(library: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_file(library: str) -> Any:
     if library == "bioframe":
         from scripts.reading.bioframe import read
-    elif library == "polars_bio":
+    elif library in {"polars_bio", "polars_bio_left"}:
         from scripts.reading.polars_bio import read
     elif library == "pyranges_0":
         from scripts.reading.pyranges_0 import read
